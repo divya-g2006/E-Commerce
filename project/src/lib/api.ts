@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const rawBaseUrl = import.meta.env.VITE_API_URL || 'https://e-commerce-at6a.onrender.com';
 
 const API_BASE_URL = String(rawBaseUrl).replace(/\/+$/, '').endsWith('/api')
   ? String(rawBaseUrl).replace(/\/+$/, '')
