@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://e-commerce-80uh.onrender.com/$1"
+      "destination": "https://e-commerce-at6a.onrender.com"
     }
   ]
 }
