@@ -48,7 +48,7 @@
 import axios from 'axios';
 
 // Backend URL from env variable
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://e-commerce-at6a.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://e-commerce-z6zq.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
