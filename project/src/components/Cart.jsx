@@ -5,25 +5,9 @@ import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { formatINR } from '../lib/format';
 
-interface CartItem {
-  _id: string;
-  product: {
-    _id: string;
-    name: string;
-    price: number;
-    image: string;
-  };
-  quantity: number;
-}
-
-type CartProps = {
-  onClose: () => void;
-  onCartUpdate: () => void;
-};
-
-export default function Cart({ onClose, onCartUpdate }: CartProps) {
+export default function Cart({ onClose, onCartUpdate }) {
   const navigate = useNavigate();
-  const [cart, setCart] = useState<any>(null);
+  const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
@@ -46,7 +30,7 @@ export default function Cart({ onClose, onCartUpdate }: CartProps) {
     }
   };
 
-  const updateQuantity = async (productId: string, newQuantity: number) => {
+  const updateQuantity = async (productId, newQuantity) => {
     if (newQuantity < 1) return;
 
     try {
@@ -58,7 +42,7 @@ export default function Cart({ onClose, onCartUpdate }: CartProps) {
     }
   };
 
-  const removeItem = async (productId: string) => {
+  const removeItem = async (productId) => {
     try {
       await api.delete(`/cart/${productId}`);
       loadCart();
@@ -73,9 +57,7 @@ export default function Cart({ onClose, onCartUpdate }: CartProps) {
     navigate('/checkout');
   };
 
-  const total = cart?.products?.reduce((sum: number, item: CartItem) => {
-    return sum + (item.product?.price || 0) * item.quantity;
-  }, 0) || 0;
+  const total = cart?.products?.reduce((sum, item) => sum + (item.product?.price || 0) * item.quantity, 0) || 0;
 
   if (loading) {
     return (
@@ -109,7 +91,7 @@ export default function Cart({ onClose, onCartUpdate }: CartProps) {
         ) : (
           <>
             <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
-              {cart.products.map((item: CartItem) => (
+              {cart.products.map((item) => (
                 <div
                   key={item._id}
                   className="flex items-center space-x-4 border border-gray-200 rounded-lg p-4"

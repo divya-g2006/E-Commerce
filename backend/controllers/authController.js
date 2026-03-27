@@ -2,8 +2,6 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { body, validationResult } from 'express-validator';
 
-const RESERVED_ADMIN_EMAILS = ['gd623559@gmail.com', 'divya.g2023it@sece.ac.in'];
-
 const generateToken = (user) => {
   return jwt.sign({ userId: user._id.toString(), role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
@@ -21,10 +19,6 @@ export const register = [
       }
 
       const { name, email, password } = req.body;
-
-      if (RESERVED_ADMIN_EMAILS.includes(String(email).toLowerCase())) {
-        return res.status(403).json({ message: 'This email is reserved for an admin account. Please use a different email.' });
-      }
 
       const existingUser = await User.findOne({ email });
       if (existingUser) {

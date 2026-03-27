@@ -1,19 +1,7 @@
 import { ShoppingCart, User, LogOut, ShoppingBag, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-type NavbarProps = {
-  onLoginClick: () => void;
-  onAdminLoginClick: () => void;
-  onSignupClick: () => void;
-  onProfileClick: () => void;
-  onCartClick: () => void;
-  onMyOrdersClick: () => void;
-  onAdminClick: () => void;
-  onHomeClick: () => void;
-  cartItemsCount: number;
-};
-
-export default function Navbar({ onLoginClick, onAdminLoginClick, onSignupClick, onProfileClick, onCartClick, onMyOrdersClick, onAdminClick, onHomeClick, cartItemsCount }: NavbarProps) {
+export default function Navbar({ onLoginClick, onAdminLoginClick, onSignupClick, onProfileClick, onCartClick, onMyOrdersClick, onAdminClick, onHomeClick, cartItemsCount }) {
   const { user, logout } = useAuth();
   const isAdmin = user?.role === 'admin';
 

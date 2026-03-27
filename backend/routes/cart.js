@@ -1,9 +1,9 @@
 import express from 'express';
-import { 
-  getCart, 
-  addToCart, 
-  updateCartItem, 
-  removeFromCart 
+import {
+  getCart,
+  addToCart,
+  updateCartItem,
+  removeFromCart,
 } from '../controllers/cartController.js';
 import { authenticate } from '../middleware/auth.js';
 

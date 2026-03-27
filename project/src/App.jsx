@@ -40,7 +40,7 @@ function AppContent() {
     }
   };
 
-  const handleAddToCart = async (productId: string) => {
+  const handleAddToCart = async (productId) => {
     if (!user) {
       navigate('/login');
       return;
@@ -50,7 +50,7 @@ function AppContent() {
       await api.post('/cart', { productId });
       alert('Item added to cart!');
       loadCartCount();
-    } catch (error: any) {
+    } catch (error) {
       alert(error.response?.data?.message || 'Failed to add item to cart');
     }
   };

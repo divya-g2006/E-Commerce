@@ -2,6 +2,40 @@ import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 import { body, validationResult } from 'express-validator';
+import { getExpectedDeliveryDate, isDelayedOrder } from '../utils/delivery.js';
+
+const AUTO_OUT_FOR_DELIVERY_DAYS = 9;
+
+const autoUpdateOutForDelivery = async () => {
+  const cutoff = new Date(Date.now() - AUTO_OUT_FOR_DELIVERY_DAYS * 24 * 60 * 60 * 1000);
+  await Order.updateMany(
+    { status: { $ne: 'Completed' }, createdAt: { $lt: cutoff } },
+    { $set: { status: 'Out for Delivery' } }
+  );
+};
+
+const withDerivedOrderFields = (order) => {
+  const plain = typeof order?.toObject === 'function' ? order.toObject() : order;
+  const expected = getExpectedDeliveryDate(plain?.createdAt);
+  const delayed = isDelayedOrder(plain?.createdAt);
+
+  let status = plain?.status;
+  let message = 'Product processing for delivery';
+
+  if (status === 'Completed') {
+    message = 'Order successfully completed';
+  } else if (delayed) {
+    status = 'Out for Delivery';
+    message = 'Out for delivery';
+  }
+
+  return {
+    ...plain,
+    status,
+    expectedDeliveryDate: expected ? expected.toISOString() : null,
+    message,
+  };
+};
 
 export const createOrder = async (req, res) => {
   try {
@@ -92,11 +126,11 @@ export const createOrder = async (req, res) => {
       await cart.save();
     }
 
-    await order.populate('items.product');
+    await order.populate('items.product', 'name price image');
 
     res.status(201).json({
       message: 'Order placed successfully',
-      order,
+      order: withDerivedOrderFields(order),
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -116,18 +150,18 @@ export const receiveOrder = async (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    if (order.status !== 'Pending') {
-      return res.status(400).json({ message: 'Only pending orders can be marked as completed' });
+    if (!['Pending', 'Out for Delivery'].includes(order.status)) {
+      return res.status(400).json({ message: 'Only pending/out-for-delivery orders can be marked as completed' });
     }
 
     order.status = 'Completed';
     await order.save();
 
-    await order.populate('items.product');
+    await order.populate('items.product', 'name price image');
 
     res.json({
       message: 'Order marked as completed',
-      order,
+      order: withDerivedOrderFields(order),
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -136,11 +170,12 @@ export const receiveOrder = async (req, res) => {
 
 export const getUserOrders = async (req, res) => {
   try {
+    await autoUpdateOutForDelivery();
     const orders = await Order.find({ user: req.user._id })
-      .populate('items.product')
+      .populate('items.product', 'name price image')
       .sort({ createdAt: -1 });
     
-    res.json(orders);
+    res.json(orders.map(withDerivedOrderFields));
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -148,19 +183,37 @@ export const getUserOrders = async (req, res) => {
 
 export const getAllOrders = async (req, res) => {
   try {
+    await autoUpdateOutForDelivery();
     const orders = await Order.find()
       .populate('user', 'name email')
-      .populate('items.product')
+      .populate('items.product', 'name price image')
       .sort({ createdAt: -1 });
     
-    res.json(orders);
+    res.json(orders.map(withDerivedOrderFields));
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Admin-only: fetch all orders (not user-specific)
+export const getAdminOrders = async (req, res) => {
+  try {
+    await autoUpdateOutForDelivery();
+    const orders = await Order.find()
+      .populate('user', 'name email')
+      .populate('items.product', 'name price image')
+      .sort({ createdAt: -1 });
+
+    res.json(orders.map(withDerivedOrderFields));
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
 export const updateOrderStatus = [
-  body('status').isIn(['Pending', 'Shipped', 'Delivered']).withMessage('Invalid status'),
+  body('status')
+    .isIn(['Pending', 'Out for Delivery', 'Shipped', 'Delivered', 'Completed'])
+    .withMessage('Invalid status'),
   
   async (req, res) => {
     try {
@@ -176,7 +229,7 @@ export const updateOrderStatus = [
         id,
         { status },
         { new: true, runValidators: true }
-      ).populate('items.product').populate('user', 'name email');
+      ).populate('items.product', 'name price image').populate('user', 'name email');
       
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
@@ -184,7 +237,7 @@ export const updateOrderStatus = [
       
       res.json({
         message: 'Order status updated successfully',
-        order,
+        order: withDerivedOrderFields(order),
       });
     } catch (error) {
       res.status(500).json({ message: 'Server error', error: error.message });

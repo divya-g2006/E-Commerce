@@ -4,21 +4,11 @@ import { ShoppingCart, ArrowLeft } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
-interface Product {
-  _id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  category: string;
-  stock: number;
-}
-
 export default function ProductDetails() {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
 
@@ -49,7 +39,7 @@ export default function ProductDetails() {
     try {
       await api.post('/cart', { productId: product._id });
       alert('Item added to cart!');
-    } catch (error: any) {
+    } catch (error) {
       alert(error.response?.data?.message || 'Failed to add item to cart');
     } finally {
       setAddingToCart(false);

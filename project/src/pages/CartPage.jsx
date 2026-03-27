@@ -5,22 +5,10 @@ import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { formatINR } from '../lib/format';
 
-interface CartItem {
-  _id: string;
-  product: {
-    _id: string;
-    name: string;
-    price: number;
-    image: string;
-    stock?: number;
-  };
-  quantity: number;
-}
-
 export default function CartPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [cart, setCart] = useState<any>(null);
+  const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,7 +27,7 @@ export default function CartPage() {
     }
   };
 
-  const updateQuantity = async (productId: string, newQuantity: number) => {
+  const updateQuantity = async (productId, newQuantity) => {
     if (newQuantity < 1) return;
     try {
       await api.put(`/cart/${productId}`, { quantity: newQuantity });
@@ -49,7 +37,7 @@ export default function CartPage() {
     }
   };
 
-  const removeItem = async (productId: string) => {
+  const removeItem = async (productId) => {
     try {
       await api.delete(`/cart/${productId}`);
       await loadCart();
@@ -58,7 +46,7 @@ export default function CartPage() {
     }
   };
 
-  const items: CartItem[] = cart?.products || [];
+  const items = cart?.products || [];
 
   const total = useMemo(() => {
     return items.reduce((sum, item) => sum + (item.product?.price || 0) * item.quantity, 0);

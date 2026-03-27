@@ -4,17 +4,6 @@ import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { formatINR } from '../lib/format';
 
-interface CartItem {
-  _id: string;
-  product: {
-    _id: string;
-    name: string;
-    price: number;
-    image: string;
-  };
-  quantity: number;
-}
-
 const UPI_ID = '8940307512@ibl';
 
 export default function CheckoutPage() {
@@ -22,7 +11,7 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const [cart, setCart] = useState<any>(null);
+  const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [placing, setPlacing] = useState(false);
   const [success, setSuccess] = useState('');
@@ -61,7 +50,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const items: CartItem[] = cart?.products || [];
+  const items = cart?.products || [];
 
   const total = useMemo(() => {
     return items.reduce((sum, item) => sum + (item.product?.price || 0) * item.quantity, 0);
@@ -106,7 +95,7 @@ export default function CheckoutPage() {
 
       const orderId = response.data?.order?._id;
       navigate('/order-success', { state: { orderId } });
-    } catch (e: any) {
+    } catch (e) {
       setError(e.response?.data?.message || 'Failed to place order');
     } finally {
       setPlacing(false);

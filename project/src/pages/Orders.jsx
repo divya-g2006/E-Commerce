@@ -3,28 +3,11 @@ import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { formatINR } from '../lib/format';
-
-interface OrderItem {
-  product: {
-    _id: string;
-    name: string;
-    image: string;
-  };
-  quantity: number;
-  price: number;
-}
-
-interface Order {
-  _id: string;
-  items: OrderItem[];
-  totalAmount: number;
-  status: 'Pending' | 'Shipped' | 'Delivered' | 'Completed';
-  createdAt: string;
-}
+import { getExpectedDeliveryDate, getOrderMessage, isDelayed } from '../lib/delivery';
 
 export default function Orders() {
   const { user } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -39,7 +22,7 @@ export default function Orders() {
     try {
       const response = await api.get('/orders/myorders');
       setOrders(response.data);
-    } catch (e: any) {
+    } catch (e) {
       console.error('Error loading orders:', e);
       const status = e.response?.status;
       const serverMessage = e.response?.data?.message;
@@ -54,12 +37,14 @@ export default function Orders() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
       case 'Pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-orange-100 text-orange-800';
       case 'Completed':
         return 'bg-green-100 text-green-800';
+      case 'Out for Delivery':
+        return 'bg-blue-100 text-blue-800';
       case 'Shipped':
         return 'bg-blue-100 text-blue-800';
       case 'Delivered':
@@ -69,13 +54,13 @@ export default function Orders() {
     }
   };
 
-  const markReceived = async (orderId: string) => {
+  const markReceived = async (orderId) => {
     try {
       await api.put(`/orders/receive/${orderId}`);
       alert('Order Completed');
       setLoading(true);
       await loadOrders();
-    } catch (e: any) {
+    } catch (e) {
       const status = e.response?.status;
       const serverMessage = e.response?.data?.message;
       const requestedUrl = e.config?.baseURL && e.config?.url ? `${e.config.baseURL}${e.config.url}` : null;
@@ -128,16 +113,34 @@ export default function Orders() {
                       <p className="text-sm text-gray-600">
                         Date: {new Date(order.createdAt).toLocaleDateString()}
                       </p>
+                      <p className="text-sm text-gray-600">
+                        Expected:{' '}
+                        {(() => {
+                          const expected =
+                            order.expectedDeliveryDate ? new Date(order.expectedDeliveryDate) : getExpectedDeliveryDate(order.createdAt);
+                          if (!expected) return <span className="text-gray-500">N/A</span>;
+
+                          const delayed = isDelayed(order.createdAt);
+                          return (
+                            <span className={delayed ? 'text-red-600 font-semibold' : undefined}>
+                              {expected.toLocaleDateString()}
+                            </span>
+                          );
+                        })()}
+                      </p>
                     </div>
                     <div className="text-right">
                       <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
                         {order.status}
                       </span>
+                      <p className={`mt-2 text-sm font-medium ${order.status === 'Completed' ? 'text-green-700' : order.status === 'Out for Delivery' ? 'text-blue-700' : 'text-orange-700'}`}>
+                        {order.message ?? getOrderMessage(order.status, order.createdAt)}
+                      </p>
                       <p className="text-lg font-bold text-gray-800 mt-2">
                         {formatINR(order.totalAmount)}
                       </p>
 
-                      {order.status === 'Pending' && (
+                      {(order.status === 'Pending' || order.status === 'Out for Delivery') && (
                         <button
                           onClick={() => markReceived(order._id)}
                           className="mt-3 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"

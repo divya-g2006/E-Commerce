@@ -1,14 +1,10 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 
-type LocationState = {
-  orderId?: string;
-};
-
 export default function OrderSuccess() {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = (location.state || {}) as LocationState;
+  const state = location.state || {};
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">

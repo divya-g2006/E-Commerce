@@ -3,8 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Login from '../components/Login';
 import { useAuth } from '../contexts/AuthContext';
 
-type LoginMode = 'user' | 'admin';
-
 const useQuery = () => {
   const { search } = useLocation();
   return useMemo(() => new URLSearchParams(search), [search]);
@@ -13,7 +11,7 @@ const useQuery = () => {
 export default function LoginPage() {
   const navigate = useNavigate();
   const query = useQuery();
-  const mode = (query.get('mode') === 'admin' ? 'admin' : 'user') as LoginMode;
+  const mode = query.get('mode') === 'admin' ? 'admin' : 'user';
   const { user } = useAuth();
   const [justLoggedIn, setJustLoggedIn] = useState(false);
 
